@@ -1,10 +1,10 @@
 <?php
 namespace dzer\coltaobao\lib;
 
-use colTaoBao\basic\Config;
-use colTaoBao\basic\Log;
-use colTaoBao\basic\MysqliDb;
-use colTaoBao\Enterance;
+use dzer\coltaobao\basic\Config;
+use dzer\coltaobao\basic\Log;
+use dzer\coltaobao\basic\MysqliDb;
+use dzer\coltaobao\Enterance;
 
 /**
  * 基础类
@@ -75,7 +75,6 @@ class TbBase
 
     public function __construct()
     {
-        Enterance::run(__DIR__);
         $this->log = Log::getInstance();
         $this->db = new MysqliDb(Config::get('db'));
     }

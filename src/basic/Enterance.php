@@ -1,8 +1,5 @@
 <?php
-namespace dzer\coltaobao;
-
-use dzer\coltaobao\basic\Config;
-
+namespace dzer\coltaobao\basic;
 /**
  * 自动注册
  *
@@ -47,7 +44,6 @@ class Enterance
         \date_default_timezone_set($timeZone);
     }
 }
-Enterance::run(__DIR__);
 
 
 

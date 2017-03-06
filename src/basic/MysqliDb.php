@@ -1,5 +1,5 @@
 <?php
-namespace colTaoBao\basic;
+namespace dzer\coltaobao\basic;
 /**
  * MysqliDb Class
  *
@@ -13,6 +13,8 @@ namespace colTaoBao\basic;
  * @link      http://github.com/joshcam/PHP-MySQLi-Database-Class 
  * @version   2.8-master
  */
+use \mysqli;
+use \Exception;
 
 class MysqliDb
 {

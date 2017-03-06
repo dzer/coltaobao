@@ -1,5 +1,5 @@
 <?php
-namespace colTaoBao\basic;
+namespace dzer\coltaobao\basic;
 
 /**
  * 日志类
@@ -27,7 +27,6 @@ class Log
     {
         $this->config = $config;
         $this->file_path = isset($config) ? $config : '/var/log/coltaobao';
-
         if (!file_exists($this->file_path)) {
             @mkdir($this->file_path, 0755, true);
         }
@@ -35,27 +34,28 @@ class Log
 
     public function debug($content)
     {
-        $this->save('_DEBUG', $content);
+        $this->save('DEBUG', $content);
     }
 
     public function error($content)
     {
-        $this->save('_ERROR', $content);
+        $this->save('ERROR', $content);
     }
 
     public function info($content)
     {
-        $this->save('_INFO', $content);
+        $this->save('INFO', $content);
     }
 
     public function warning($content)
     {
-        $this->save('_WARNING', $content);
+        $this->save('WARNING', $content);
     }
 
     protected function save($path, $content)
     {
-        $log_file = $this->file_path . $path . '_' . date("Y-m-d");
+        $log_file = $this->file_path . '/' . $path . '_' . date("Y-m-d");
+
         if (!isset($this->file[$path])) {
             $last = $this->file_path . $path . '_' . date("Y-m-d", strtotime("-1 day"));
             if (isset($this->file[$last])) {

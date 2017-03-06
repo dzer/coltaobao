@@ -1,5 +1,5 @@
 <?php
-namespace colTaoBao\basic;
+namespace dzer\coltaobao\basic;
 /**
  * 基础请求类
  *

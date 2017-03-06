@@ -1,6 +1,6 @@
 <?php
 
-namespace colTaoBao\basic;
+namespace dzer\coltaobao\basic;
 
 /**
  * Class Formater

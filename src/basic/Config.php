@@ -1,7 +1,5 @@
 <?php
-namespace colTaoBao\basic;
-
-use colTaoBao\Enterance;
+namespace dzer\coltaobao\basic;
 
 /**
  * 配置文件类
