@@ -1,15 +1,27 @@
 <?php
+namespace dzer\coltaobao\lib;
+
+use colTaoBao\basic\Request;
+use Exception;
 
 /**
  * 采集类
  * 采集店铺所有商品
  *
- * @author  dx
- * @date 2015/12/9
- * @version 1.0
+ * @author dzer <d20053140@gmail.com>
+ * @version 2.0
  */
 class TbCollection extends TbBase
 {
+    public function __construct($shopUrl = null)
+    {
+        parent::__construct();
+        if (!empty($shopUrl)) {
+            $this->shopUrl = $shopUrl;
+        }
+
+    }
+
     /**
      * 采集主要流程
      */
@@ -29,7 +41,7 @@ class TbCollection extends TbBase
      */
     protected function colGoodsList()
     {
-        $request = new TbRequest();
+        $request = new Request();
         //首先采集店铺下所有的商品基本信息
         for ($pageNum = 1; $pageNum < 50; $pageNum++) {
             //获取html
@@ -61,13 +73,13 @@ class TbCollection extends TbBase
     protected function colGoodsInfo()
     {
         if (!empty($this->goodsList)) {
-            $request = new TbRequest();
+            $request = new Request();
             foreach ($this->goodsList as $k => $goods) {
                 try {
                     $info = $request->curl($this->goodsInfoUrl . $goods['id']);
                 } catch (Exception $e) {
                     //采集如出错就标记状态（暂时只记录日志）
-                    TbLog::write(date('Y-m-d H:i:s') . $goods['id'] . " 采集失败！\r\n");
+                    $this->log->warning('商品id：' . $goods['id'] . '采集失败！');
                     continue;
                 }
                 $this->goodsId = $goods['id'];
@@ -98,19 +110,36 @@ class TbCollection extends TbBase
      */
     private function saveShop($data)
     {
-        $shopModle = D('ColtaobaoShop');
         if (isset($data->picUrl) && !empty($data->picUrl)) {
             //保存店铺logo到本地
             $savePath = $this->createDir($this->shopId, null, 'logo');
             $data->img = $this->saveImage($data->picUrl, $savePath);
         }
 
-        $shopModle->create($data);
-        $id = $shopModle->add('', array(), true);
+        $param = array (
+            'userNumId' => $data->userNumId,
+            'type' => $data->type,
+            'nick' => $data->nick,
+            'creditLevel' => $data->creditLevel,
+            'goodRatePercentage' => $data->goodRatePercentage,
+            'shopTitle' => $data->shopTitle,
+            'shopId' => $data->shopId,
+            'weitaoId' => $data->weitaoId,
+            'fansCount' => $data->fansCount,
+            'img' => $data->img,
+            'picUrl' => $data->picUrl,
+            'starts' => $data->starts,
+            'goodsSum' => $data->goodsSum,
+            'createdate' => time(),
+            'modifydate' => time(),
+        );
+
+        $id = $this->db->insert('coltaobao_shop', $param);
+
         if ($id > 0) {
             return true;
         } else {
-            TbLog::write(date('Y-m-d H:i:s') . " :\r\n" . print_r($data, true) . " 采集失败！\r\n");
+            $this->log->warning(print_r($data, true) . "\r\n店铺保存失败！");
             return false;
         }
     }
@@ -123,10 +152,20 @@ class TbCollection extends TbBase
      */
     private function saveGoods($data)
     {
-        $goodsModle = D('ColtaobaoGoods');
-        $data->itemInfoModel->shopId = $this->shopId;
-        $goodsModle->create($data->itemInfoModel);
-        $goodsId = $goodsModle->add('', array(), true);
+
+        $param = array (
+            'shopId' => $this->shopId,
+            'itemId' => $data->itemInfoModel->itemId,
+            'title' => $data->itemInfoModel->title,
+            'favcount' => $data->itemInfoModel->favcount,
+            'location' => $data->itemInfoModel->location,
+            'categoryId' => $data->itemInfoModel->categoryId,
+            'price' => $data->itemInfoModel->price,
+            'createdate' => time(),
+            'modifydate' => time(),
+        ) ;
+
+        $goodsId = $this->db->insert('coltaobao_goods', $param);
         if ($goodsId > 0) {
             //采集banner图片地址并保存
             $this->saveGoodsBanner($data);
@@ -145,10 +184,10 @@ class TbCollection extends TbBase
      */
     private function saveGoodsInfo($data)
     {
-        $goodsInfoModle = D('ColtaobaoGoodsInfo');
+        $this->db->where('itemId', $data->itemInfoModel->itemId)->delete('coltaobao_goods_info');
         //采集描述
         $fullDesc = $this->colGoodsDesc($data->descInfo->fullDescUrl);
-        $info = array(
+        $param = array(
             'itemId' => $data->itemInfoModel->itemId,
             'skuProps' => json_encode($data->skuModel->skuProps),
             'props' => json_encode($data->props),
@@ -156,10 +195,13 @@ class TbCollection extends TbBase
             'h5DescUrl' => $data->descInfo->h5DescUrl,
             'fullDesc' => $fullDesc,
         );
-        $goodsInfoModle->create($info);
-        $goodsInfoModle->where('itemId =' . $data->itemInfoModel->itemId)->delete();
-        $goodsInfoModle->add();
-        return true;
+        $goodsId = $this->db->insert('coltaobao_goods_info', $param);
+        if ($goodsId > 0) {
+            return true;
+        } else {
+            $this->log->warning(print_r($param, true) . "\r\n商品信息保存失败！");
+            return false;
+        }
     }
 
     /**
@@ -172,7 +214,7 @@ class TbCollection extends TbBase
     private function colGoodsDesc($fullDescUrl)
     {
         $fullDescHtml = '';
-        $request = new TbRequest();
+        $request = new Request();
         $rs = $request->curl($fullDescUrl);
         if (!empty($rs)) {
             $desc = json_decode($rs);
@@ -207,8 +249,7 @@ class TbCollection extends TbBase
      */
     private function saveGoodsBanner($data)
     {
-        $goodsBannerModle = D('ColtaobaoGoodsBanner');
-        $goodsBannerModle->where('itemId =' . $data->itemInfoModel->itemId)->delete();
+        $this->db->where('itemId', $data->itemInfoModel->itemId)->delete('coltaobao_goods_banner');
         $savePath = $this->createDir($this->shopId, $this->goodsId, 'banner');
         //采集banner图片地址并保存
         foreach ($data->itemInfoModel->picsPath as $_pathUrl) {
@@ -218,9 +259,13 @@ class TbCollection extends TbBase
                     'itemId' => $data->itemInfoModel->itemId,
                     'picsPath' => $_pathUrl,
                     'path' => $imgPath,
+                    'createdate' => time(),
+                    'modifydate' => time()
                 );
-                $goodsBannerModle->create($banner);
-                $goodsBannerModle->add();
+                $banner_id = $this->db->insert('coltaobao_goods_info', $banner);
+                if (!$banner_id) {
+                    $this->log->warning(print_r($banner, true) . "\r\n商品banner信息保存失败！");
+                }
             }
         }
         return true;

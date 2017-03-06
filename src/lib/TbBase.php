@@ -1,4 +1,10 @@
 <?php
+namespace dzer\coltaobao\lib;
+
+use colTaoBao\basic\Config;
+use colTaoBao\basic\Log;
+use colTaoBao\basic\MysqliDb;
+use colTaoBao\Enterance;
 
 /**
  * 基础类
@@ -16,6 +22,9 @@
 //4、通过接口返回的信息 获取商品描述
 class TbBase
 {
+    protected $log;
+    protected $db;
+
     /**
      * 店铺地址
      *
@@ -64,11 +73,11 @@ class TbBase
      */
     protected $goodsList = array();
 
-    public function __construct($shopUrl = null)
+    public function __construct()
     {
-        if (!empty($shopUrl)) {
-            $this->shopUrl = $shopUrl;
-        }
+        Enterance::run(__DIR__);
+        $this->log = Log::getInstance();
+        $this->db = new MysqliDb(Config::get('db'));
     }
 
     /**
@@ -76,15 +85,15 @@ class TbBase
      *
      * @param integer $shopId 店铺id
      * @param integer $goodsId 商品id
-     * @param string  $dirName 目录名称
+     * @param string $dirName 目录名称
      * @return string
      */
     protected function createDir($shopId, $goodsId = null, $dirName = null)
     {
         if (!empty($goodsId)) {
-            $path = TB_RESOURCE_PATH . '/' . $shopId . '/' . $goodsId . '/';
+            $path = Config::get('resource') . '/' . $shopId . '/' . $goodsId . '/';
         } else {
-            $path = TB_RESOURCE_PATH . '/' . $shopId . '/';
+            $path = Config::get('resource') . '/' . $shopId . '/';
         }
         if (!empty($dirName)) {
             $path .= $dirName . '/';
@@ -98,8 +107,8 @@ class TbBase
     /**
      * 保存指定图片到指定路径
      *
-     * @param  string $url  图片http地址
-     * @param string  $path 图片保存的目录名称
+     * @param  string $url 图片http地址
+     * @param string $path 图片保存的目录名称
      * @return  String
      */
     protected function saveImage($url, $path)
@@ -124,7 +133,7 @@ class TbBase
     /**
      * 获取远程图片资源
      *
-     * @param  string $url   图片http地址
+     * @param  string $url 图片http地址
      * @param  string $refer header里面的referer参数值
      * @return bool|string
      */

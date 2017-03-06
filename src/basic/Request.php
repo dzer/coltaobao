@@ -1,25 +1,25 @@
 <?php
-
+namespace colTaoBao\basic;
 /**
  * 基础请求类
  *
- * @author dx <358654744@qq.com>
- * @date 2015-11-04
- * @version 1.0
+ * @author dzer <d20053140@gmail.com>
+ * @version 2.0
  */
-class TbRequest
+class Request
 {
     //cURL允许执行的最长秒数
     protected $readTimeout = 30;
     //在发起连接前等待的时间
-    protected $connectTimeout;
+    protected $connectTimeout = 10;
 
     /**
      * 获取网页内容
      * @param string $url 请求地址
      * @return string
      */
-    public function get($url){
+    public function get($url)
+    {
         return file_get_contents($url);
     }
 
@@ -30,7 +30,7 @@ class TbRequest
      * @param array $headerFields 请求头参数
      * @param array $postFields 请求体参数
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function curl($url, $headerFields = null, $postFields = null)
     {
@@ -42,11 +42,11 @@ class TbRequest
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         //设置cURL允许执行的最长秒数
         if ($this->readTimeout) {
-            curl_setopt($ch, CURLOPT_TTBEOUT, $this->readTimeout);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->readTimeout);
         }
         //尝试连接等待时间
         if ($this->connectTimeout) {
-            curl_setopt($ch, CURLOPT_CONNECTTTBEOUT, $this->connectTimeout);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout);
         }
         //https 请求(当请求https的数据时，会要求证书，这时候，加上下面这两个参数，规避ssl的证书检查)
         if (strlen($url) > 5 && strtolower(substr($url, 0, 5)) == "https") {
@@ -77,23 +77,17 @@ class TbRequest
                 curl_setopt($ch, CURLOPT_POSTFIELDS, substr($postBodyString, 0, -1));
             }
         }
-        $reponse = curl_exec($ch);
-        if (IM_DEBUG) {
-            $log = "url: \r\n" . $url . "body: \r\n" . print_r($postFields, true) . "\r\n"
-                . "response: \r\n" . print_r($reponse, true) . "\r\n";
-            TbLog::write($log);
-        }
+        $response = curl_exec($ch);
         if (curl_errno($ch)) {
-            throw new Exception(curl_error($ch), 0);
+            throw new \Exception(curl_error($ch), 0);
         } else {
             $httpStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             if (200 !== $httpStatusCode) {
-                throw new Exception($reponse, $httpStatusCode);
+                throw new \Exception($response, $httpStatusCode);
             }
         }
-
         curl_close($ch);
-        return $reponse;
+        return $response;
     }
 
 }
