@@ -3,6 +3,7 @@ namespace dzer\coltaobao\basic;
 /**
  * 自动注册
  *
+ * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
  * @version 2.0
  */

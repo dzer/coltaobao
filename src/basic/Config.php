@@ -4,7 +4,7 @@ namespace dzer\coltaobao\basic;
 /**
  * 配置文件类
  *
- * @package colTaoBao\config
+ * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
  * @version 2.0
  */

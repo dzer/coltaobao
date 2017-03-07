@@ -5,7 +5,7 @@ namespace dzer\coltaobao\basic;
 /**
  * Class Formater
  *
- * @package colTaoBao\basic
+ * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
  * @version 2.0
  */

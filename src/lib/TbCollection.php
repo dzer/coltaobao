@@ -28,20 +28,15 @@ class TbCollection extends TbBase
      */
     public function colMain()
     {
-        //$start_time = $this->microTime();
-        //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息并保存（最好保存到缓存比如redis）
-        $this->colGoodsList();
+        $start_time = $this->microTime();
 
-        /*$end_time = $this->microTime();
-        $total_time = $end_time - $start_time;
-        $time_cost = sprintf("%.10f", $total_time);
-        echo '<hr>';
-        echo "program cost total " . $time_cost . "s\n";
-        echo '<hr>';
-        var_dump($this->goodsList);
-        die();*/
+        //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息
+        $this->colGoodsList();
         //第二步：通过商品id 循环采集单个商品详细信息
         $this->colGoodsInfo();
+
+        $end_time = $this->microTime();
+        $this->log->info("店铺：" . $this->shopId . ',共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) ."秒\r\n");
     }
 
     /**
@@ -115,10 +110,7 @@ class TbCollection extends TbBase
         if (!empty($this->goodsList)) {
             $request = new Request();
             $content = $request->curlMulti($this->getGoodsInfoUrl());
-
             foreach ($content as $k => $info) {
-                //$this->goodsId = $goods['id'];
-                //保存到数据库
                 if (!empty($info)) {
                     $rs = @json_decode($info);
                     if (!empty($rs->ret[0]) && !empty($rs->data) && (strpos($rs->ret[0], 'SUCCESS') !== false)) {
@@ -171,7 +163,9 @@ class TbCollection extends TbBase
         if (isset($data->picUrl) && !empty($data->picUrl)) {
             //保存店铺logo到本地
             $savePath = $this->createDir($this->shopId, null, 'logo');
-            $data->img = $this->saveImage($data->picUrl, $savePath);
+            $request = new Request();
+            $img_rs = $request->curl($data->picUrl);
+            $data->img = $this->saveImages($img_rs, $data->picUrl, $savePath);
         }
         $param = array(
             'userNumId' => $data->userNumId,
@@ -186,13 +180,13 @@ class TbCollection extends TbBase
             'img' => $data->img,
             'picUrl' => $data->picUrl,
             'starts' => $data->starts,
-            'createdate' => time(),
-            'modifydate' => time(),
+            'createTime' => date('Y-m-d H:i:s'),
         );
-
+        $this->db->where('shopId', $data->shopId)->delete('shop');
         $id = $this->db->insert('shop', $param);
 
         if ($id > 0) {
+            $this->log->info($data->nick . " 店铺信息保存成功！");
             return true;
         } else {
             $this->log->warning(print_r($data, true) . "\r\n店铺保存失败！" . $this->db->getLastError());
@@ -208,7 +202,6 @@ class TbCollection extends TbBase
      */
     private function saveGoods($data)
     {
-
         $param = array(
             'shopId' => $this->shopId,
             'itemId' => $data->itemInfoModel->itemId,
@@ -217,18 +210,20 @@ class TbCollection extends TbBase
             'location' => $data->itemInfoModel->location,
             'categoryId' => $data->itemInfoModel->categoryId,
             'price' => $data->itemInfoModel->price,
-            'createdate' => time(),
-            'modifydate' => time(),
+            'createTime' => date('Y-m-d H:i:s'),
         );
-
+        $this->db->where('itemId', $data->itemInfoModel->itemId)->delete('goods');
         $goodsId = $this->db->insert('goods', $param);
         if ($goodsId > 0) {
+            $this->log->info("商品基本信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
             //采集banner图片地址并保存
             $this->saveGoodsBanner($data);
             //采集商品描述并保存
             $this->saveGoodsInfo($data);
+        } else {
+            $this->log->warning(print_r($param, true) . "\r\n商品保存失败！" . $this->db->getLastError());
+            return false;
         }
-        echo $data->itemInfoModel->title . '--采集成功！<br/>';
         return true;
     }
 
@@ -245,16 +240,17 @@ class TbCollection extends TbBase
         $fullDesc = $this->colGoodsDesc($data->descInfo->fullDescUrl);
         $param = array(
             'itemId' => $data->itemInfoModel->itemId,
-            'skuProps' => json_encode($data->skuModel->skuProps),
-            'props' => json_encode($data->props),
+            'skuProps' => !empty($data->skuModel->skuProps) ? json_encode($data->skuModel->skuProps) : '',
+            'props' => !empty($data->props) ? json_encode($data->props) : '',
             'pcDescUrl' => $data->descInfo->pcDescUrl,
             'h5DescUrl' => $data->descInfo->h5DescUrl,
             'fullDesc' => $fullDesc,
-            'createdate' => time(),
-            'modifydate' => time()
+            'createTime' => date('Y-m-d H:i:s'),
         );
+        $this->db->where('itemId', $data->itemInfoModel->itemId)->delete('goods_info');
         $goodsId = $this->db->insert('goods_info', $param);
         if ($goodsId > 0) {
+            $this->log->info("商品描述信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
             return true;
         } else {
             $this->log->warning(print_r($param, true) . "\r\n商品信息保存失败！");
@@ -284,14 +280,23 @@ class TbCollection extends TbBase
                 if (isset($img[1]) && !empty($img[1])) {
                     //采集商品描述图片地址并替换
                     $savePath = $this->createDir($this->shopId, $this->goodsId, 'desc');
-                    foreach ($img[1] as $_pathUrl) {
-                        $imgPath = $this->saveImage($_pathUrl, $savePath);
+
+                    //采集图片
+                    $request = new Request();
+                    $request->callback = array('dzer\coltaobao\lib\TbCollection', 'goodsImgCallback');
+                    $content = $request->curlMulti($img[1]);
+
+                    foreach ($content as $img) {
+                        //保存图片
+                        $imgPath = $this->saveImages($img['img_rs'], $img['img_url'], $savePath);
                         if (!empty($imgPath)) {
                             $replaceImg[] = $imgPath;
+                            $searchImg[] = $img['img_url'];
                         }
                     }
-                    if (isset($replaceImg)) {
-                        $fullDescHtml = str_replace($img[1], $replaceImg, $fullDesc[1]);
+
+                    if (isset($replaceImg) && isset($searchImg)) {
+                        $fullDescHtml = str_replace($searchImg, $replaceImg, $fullDesc[1]);
                     }
                 }
             }
@@ -311,23 +316,21 @@ class TbCollection extends TbBase
         $savePath = $this->createDir($this->shopId, $this->goodsId, 'banner');
         //采集banner图片地址并保存
         $request = new Request();
-        $request->callback = array('dzer\coltaobao\lib\TbCollection', 'goodsBannerCallback');
+        $request->callback = array('dzer\coltaobao\lib\TbCollection', 'goodsImgCallback');
         $content = $request->curlMulti($data->itemInfoModel->picsPath);
 
         foreach ($content as $img) {
-            $imgPath = $this->saveBannerImage($img['img_rs'], $img['img_url'], $savePath);
-            var_dump($imgPath);die;
+            $imgPath = $this->saveImages($img['img_rs'], $img['img_url'], $savePath);
             if (!empty($imgPath)) {
                 $banner = array(
                     'itemId' => $data->itemInfoModel->itemId,
                     'picsPath' => $img['img_url'],
                     'path' => $imgPath,
-                    'createdate' => time(),
-                    'modifydate' => time()
+                    'createTime' => date('Y-m-d H:i:s'),
                 );
                 $banner_id = $this->db->insert('goods_banner', $banner);
                 if (!$banner_id) {
-                    $this->log->warning(print_r($banner, true) . "\r\n商品banner信息保存失败！");
+                    $this->log->warning(print_r($banner, true) . "\r\n商品banner信息保存失败！" . $this->db->getLastError());
                 }
             }
         }
@@ -342,7 +345,7 @@ class TbCollection extends TbBase
      * @param string $path 图片保存的目录
      * @return  string
      */
-    protected function saveBannerImage($result, $img_url, $path)
+    protected function saveImages($result, $img_url, $path)
     {
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
@@ -359,7 +362,7 @@ class TbCollection extends TbBase
             return null;
     }
 
-    static function goodsBannerCallback($img_rs, $img_url)
+    static function goodsImgCallback($img_rs, $img_url)
     {
         return array(
             'img_rs' => $img_rs,
@@ -403,20 +406,6 @@ class TbCollection extends TbBase
         return $goodsList;
     }
 
-    /**
-     * 保存商品列表到数据库
-     *
-     * @param $goodsList
-     * @return bool
-     */
-    protected function saveGoodsList($goodsList)
-    {
-        if (!empty($goodsList)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     function microTime()
     {
