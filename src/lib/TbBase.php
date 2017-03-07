@@ -4,7 +4,6 @@ namespace dzer\coltaobao\lib;
 use dzer\coltaobao\basic\Config;
 use dzer\coltaobao\basic\Log;
 use dzer\coltaobao\basic\MysqliDb;
-use dzer\coltaobao\Enterance;
 
 /**
  * 基础类
@@ -87,7 +86,7 @@ class TbBase
      * @param string $dirName 目录名称
      * @return string
      */
-    protected function createDir($shopId, $goodsId = null, $dirName = null)
+    static function createDir($shopId, $goodsId = null, $dirName = null)
     {
         if (!empty($goodsId)) {
             $path = Config::get('resource') . '/' . $shopId . '/' . $goodsId . '/';

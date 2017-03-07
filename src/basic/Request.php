@@ -8,10 +8,20 @@ namespace dzer\coltaobao\basic;
  */
 class Request
 {
-    //cURL允许执行的最长秒数
-    protected $readTimeout = 30;
-    //在发起连接前等待的时间
-    protected $connectTimeout = 10;
+    /**
+     * @var int cURL允许执行的最长秒数
+     */
+    private $readTimeout = 30;
+
+    /**
+     * @var int 在发起连接前等待的时间
+     */
+    private $connectTimeout = 10;
+
+    /**
+     * @var array 回调方法
+     */
+    public $callback = array();
 
     /**
      * 获取网页内容
@@ -53,6 +63,8 @@ class Request
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         }
+        //抓取跳转后的页面
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
 
         if (is_array($postFields) && 0 < count($postFields)) {
             $postBodyString = "";
@@ -88,6 +100,82 @@ class Request
         }
         curl_close($ch);
         return $response;
+    }
+
+    public function curlMulti($urlList, $maxRequestNum = 10)
+    {
+        if (empty($urlList)) {
+            return false;
+        }
+        $mh = curl_multi_init(); //返回一个新cURL批处理句柄
+        for ($i = 0; $i < count($urlList) && $i < $maxRequestNum; $i++) {
+            if (!isset($urlList[$i])) {
+                continue;
+            }
+            $ch = curl_init();  //初始化单个cURL会话
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_URL, $urlList[$i]);
+            //curl_setopt($ch, CURLOPT_COOKIE, self::$user_cookie);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->readTimeout);
+            $requestMap[$i] = $ch;
+            curl_multi_add_handle($mh, $ch);  //向curl批处理会话中添加单独的curl句柄
+        }
+        $rs = array();
+        do {
+            //运行当前 cURL 句柄的子连接
+            while (($cme = curl_multi_exec($mh, $active)) == CURLM_CALL_MULTI_PERFORM) ;
+            if ($cme != CURLM_OK) {
+                break;
+            }
+            //获取当前解析的cURL的相关传输信息
+            while ($done = curl_multi_info_read($mh)) {
+                $info = curl_getinfo($done['handle']);
+                $tmp_result = curl_multi_getcontent($done['handle']);
+                $error = curl_error($done['handle']);
+
+                if ($tmp_result === false) {
+                    Log::getInstance()->error("请求失败！" . $error . "\r\n"  . var_export($info, true));
+                    continue;
+                }
+                if (!empty($this->callback)) {
+                    $tmp_result = call_user_func($this->callback, $tmp_result, $info['url']);
+                }
+                $rs[] = $tmp_result;
+                //保证同时有$max_size个请求在处理
+                if (isset($urlList[$i]) && $i < count($urlList)) {
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_HEADER, 0);
+                    curl_setopt($ch, CURLOPT_URL, $urlList[$i]);
+                    //curl_setopt($ch, CURLOPT_COOKIE, self::$user_cookie);
+                    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36');
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, $this->readTimeout);
+                    $requestMap[$i] = $ch;
+                    curl_multi_add_handle($mh, $ch);
+                    $i++;
+                }
+
+                curl_multi_remove_handle($mh, $done['handle']);
+            }
+            /*if ($active) {
+                curl_multi_select($mh, 10);
+            }*/
+            //没有执行数据就会sleep，避免CPU过高
+            if($active && curl_multi_select($mh) === -1){
+                usleep(100);
+            }
+        } while ($active);
+
+        curl_multi_close($mh);
+        return $rs;
     }
 
 }

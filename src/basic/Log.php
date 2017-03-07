@@ -15,7 +15,7 @@ class Log
     private $file = [];
     private $file_path;
 
-    public static function getInstance()
+    public static function  getInstance()
     {
         if (self::$instance == null) {
             self::$instance = new Log(Config::get('log'));

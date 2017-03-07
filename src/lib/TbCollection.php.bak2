@@ -13,7 +13,6 @@ use Exception;
  */
 class TbCollection extends TbBase
 {
-
     public function __construct($shopUrl = null)
     {
         parent::__construct();
@@ -22,24 +21,29 @@ class TbCollection extends TbBase
         }
 
     }
+    function microTime()
+    {
+        list($u_sec, $sec) = explode(' ', microtime());
+        return (floatval($u_sec) + floatval($sec));
+    }
 
     /**
      * 采集主要流程
      */
     public function colMain()
     {
-        //$start_time = $this->microTime();
+        $start_time = $this->microTime();
         //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息并保存（最好保存到缓存比如redis）
         $this->colGoodsList();
 
-        /*$end_time = $this->microTime();
+        $end_time = $this->microTime();
         $total_time = $end_time - $start_time;
         $time_cost = sprintf("%.10f", $total_time);
-        echo '<hr>';
+        echo '<br>';
         echo "program cost total " . $time_cost . "s\n";
-        echo '<hr>';
+        echo '<br>';
         var_dump($this->goodsList);
-        die();*/
+        die();
         //第二步：通过商品id 循环采集单个商品详细信息
         $this->colGoodsInfo();
     }
@@ -54,57 +58,26 @@ class TbCollection extends TbBase
     {
         $request = new Request();
         //首先采集店铺下所有的商品基本信息
-
-        //获取总页数
-        $pageNum = $this->getGoodsPage();
-        $urlList = $this->getGoodsPageUrl($pageNum);
-        $content = implode('', $request->curlMulti($urlList));
-        $this->goodsList = self::regExGoods($content);
-
-        if (!empty($this->goodsList)) {
-            return $this->goodsList;
-        } else {
-            throw new Exception('采集商品列表失败');
+        for ($pageNum = 1; $pageNum < 50; $pageNum++) {
+            //获取html
+            $content = $request->get($this->shopUrl . $this->allGoodsUrl . '&pageNum=' . $pageNum);
+            echo $this->shopUrl . $this->allGoodsUrl . '&pageNum=' . $pageNum;
+            //字符集从gbk转化为utf-8
+            $content = iconv('GBK', 'UTF-8', $content);
+            //正则匹配出商品基本信息
+            $goodsList = $this->regExGoods($content);
+            if (!empty($goodsList)) {
+                $this->goodsList = array_merge($this->goodsList, $goodsList);
+                //保存到缓存或数据库
+                $this->saveGoodsList($goodsList);
+            } else {
+                //如果为空就说明采集完所有页 跳出循环
+                break;
+            }
         }
+        //进行下一步操作：采集单个商品
+        return $this->goodsList;
     }
-
-    /**
-     * 获取总页数
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function getGoodsPage()
-    {
-        $url = $this->getGoodsPageUrl(1);
-        $request = new Request();
-        $content = $request->curl($url[0]);
-        if (empty($content)) {
-            throw new Exception('获取页数失败！请重试！');
-        }
-        //匹配总页数
-        preg_match('/<b class="ui-page-s-len">(.+?)<\/b>/s', $content, $page);
-        if (isset($page[1])) {
-            $page_num = explode('/', $page[1]);
-        }
-        return isset($page_num[1]) ? $page_num[1] : false;
-    }
-
-    /**
-     * 获取商品页面url
-     *
-     * @param int $pageNum 总页数
-     * @return array
-     */
-    public function getGoodsPageUrl($pageNum)
-    {
-        $url = array();
-        for ($i = 1; $i <= $pageNum; $i++) {
-            $url[] = $this->shopUrl . $this->allGoodsUrl . '&pageNum=' . $i;
-        }
-        return $url;
-    }
-
 
     /**
      * 循环采集商品详细信息
@@ -114,16 +87,21 @@ class TbCollection extends TbBase
     {
         if (!empty($this->goodsList)) {
             $request = new Request();
-            $content = $request->curlMulti($this->getGoodsInfoUrl());
-
-            foreach ($content as $k => $info) {
-                //$this->goodsId = $goods['id'];
+            foreach ($this->goodsList as $k => $goods) {
+                try {
+                    $info = $request->curl($this->goodsInfoUrl . $goods['id']);
+                } catch (Exception $e) {
+                    //采集如出错就标记状态（暂时只记录日志）
+                    $this->log->warning('商品id：' . $goods['id'] . '采集失败！');
+                    continue;
+                }
+                $this->goodsId = $goods['id'];
                 //保存到数据库
                 if (!empty($info)) {
                     $rs = @json_decode($info);
                     if (!empty($rs->ret[0]) && !empty($rs->data) && (strpos($rs->ret[0], 'SUCCESS') !== false)) {
                         $goodsInfo = $rs->data;
-                        $goodsInfo->itemInfoModel->price = $this->goodsList[$goodsInfo->itemInfoModel->itemId]['price'];
+                        $goodsInfo->itemInfoModel->price = $goods['price'];
                         $this->shopId = $goodsInfo->seller->shopId;
                         if ($k == 0) {
                             //保存店铺信息
@@ -133,31 +111,12 @@ class TbCollection extends TbBase
                         $this->saveGoods($goodsInfo);
                     } else {
                         $msg = isset($rs->ret[0]) ? $rs->ret[0] : '';
-                        $msg .= isset($rs->data->redirectUrl) ? $rs->data->redirectUrl : '';
-                        $this->log->error('采集失败！' . $msg);
+                        $this->log->error('商品id：' . $goods['id'] . '采集失败！' . $msg);
+                        throw new Exception('商品id：' . $goods['id'] . '采集失败！' . $msg);
                     }
                 }
             }
         }
-    }
-
-    /**
-     * 获取商品信息页面url列表
-     *
-     * @return array
-     * @throws Exception
-     */
-    public function getGoodsInfoUrl()
-    {
-        $url = array();
-        if (!empty($this->goodsList)) {
-            foreach ($this->goodsList as $_goods) {
-                $url[] = $this->goodsInfoUrl . $_goods['id'];
-            }
-        } else {
-            throw new Exception('商品列表为空');
-        }
-        return $url;
     }
 
     /**
@@ -173,7 +132,7 @@ class TbCollection extends TbBase
             $savePath = $this->createDir($this->shopId, null, 'logo');
             $data->img = $this->saveImage($data->picUrl, $savePath);
         }
-        $param = array(
+        $param = array (
             'userNumId' => $data->userNumId,
             'type' => $data->type,
             'nick' => $data->nick,
@@ -195,7 +154,7 @@ class TbCollection extends TbBase
         if ($id > 0) {
             return true;
         } else {
-            $this->log->warning(print_r($data, true) . "\r\n店铺保存失败！" . $this->db->getLastError());
+            $this->log->warning(print_r($data, true) . "\r\n店铺保存失败！");
             return false;
         }
     }
@@ -209,7 +168,7 @@ class TbCollection extends TbBase
     private function saveGoods($data)
     {
 
-        $param = array(
+        $param = array (
             'shopId' => $this->shopId,
             'itemId' => $data->itemInfoModel->itemId,
             'title' => $data->itemInfoModel->title,
@@ -219,7 +178,7 @@ class TbCollection extends TbBase
             'price' => $data->itemInfoModel->price,
             'createdate' => time(),
             'modifydate' => time(),
-        );
+        ) ;
 
         $goodsId = $this->db->insert('goods', $param);
         if ($goodsId > 0) {
@@ -310,17 +269,12 @@ class TbCollection extends TbBase
         $this->db->where('itemId', $data->itemInfoModel->itemId)->delete('goods_banner');
         $savePath = $this->createDir($this->shopId, $this->goodsId, 'banner');
         //采集banner图片地址并保存
-        $request = new Request();
-        $request->callback = array('dzer\coltaobao\lib\TbCollection', 'goodsBannerCallback');
-        $content = $request->curlMulti($data->itemInfoModel->picsPath);
-
-        foreach ($content as $img) {
-            $imgPath = $this->saveBannerImage($img['img_rs'], $img['img_url'], $savePath);
-            var_dump($imgPath);die;
+        foreach ($data->itemInfoModel->picsPath as $_pathUrl) {
+            $imgPath = $this->saveImage($_pathUrl, $savePath);
             if (!empty($imgPath)) {
                 $banner = array(
                     'itemId' => $data->itemInfoModel->itemId,
-                    'picsPath' => $img['img_url'],
+                    'picsPath' => $_pathUrl,
                     'path' => $imgPath,
                     'createdate' => time(),
                     'modifydate' => time()
@@ -335,48 +289,13 @@ class TbCollection extends TbBase
     }
 
     /**
-     * 保存指定图片到指定路径
-     *
-     * @param  string $result 图片资源
-     * @param string $img_url 图片url
-     * @param string $path 图片保存的目录
-     * @return  string
-     */
-    protected function saveBannerImage($result, $img_url, $path)
-    {
-        if (!file_exists($path)) {
-            mkdir($path, 0777, true);
-        }
-        $pathInfo = pathinfo($img_url);
-        $extension = isset($pathInfo['extension']) ? $pathInfo['extension'] : 'jpg';
-        $name = time() . rand(000, 999) . '.' . $extension;
-        $fopen = fopen($path . $name, "a");
-        @fwrite($fopen, $result);
-        @fclose($fopen);
-        if (file_exists($path . $name))
-            return $path . $name;
-        else
-            return null;
-    }
-
-    static function goodsBannerCallback($img_rs, $img_url)
-    {
-        return array(
-            'img_rs' => $img_rs,
-            'img_url' => $img_url
-        );
-    }
-
-    /**
      * 正则匹配商品列表
      *
      * @param string $content 采集的html
      * @return array
      */
-    public static function regExGoods(&$content)
+    protected function regExGoods($content)
     {
-        //字符集从gbk转化为utf-8
-        $content = iconv('GBK', 'UTF-8//IGNORE', $content);
         //正则匹配出每个li
         preg_match_all('/<li class="item-wrap.+?>(.+?)<\/li>/s', $content, $goodsListLi);
         $goodsList = array();
@@ -390,7 +309,7 @@ class TbCollection extends TbBase
                 //匹配价格
                 preg_match('/<p class="price">.+"value">(.+?)<.+<\/p>/s', $_li, $price);
                 if (isset($name[1]) && !empty($name[1])) {
-                    $goodsList[$name[1]] = array(
+                    $goodsList[] = array(
                         'id' => isset($name[1]) ? trim($name[1]) : '',
                         'name' => isset($name[2]) ? trim($name[2]) : '',
                         'price' => isset($price[1]) ? trim($price[1]) : '',
@@ -416,11 +335,5 @@ class TbCollection extends TbBase
         } else {
             return false;
         }
-    }
-
-    function microTime()
-    {
-        list($u_sec, $sec) = explode(' ', microtime());
-        return (floatval($u_sec) + floatval($sec));
     }
 }

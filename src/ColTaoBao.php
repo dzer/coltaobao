@@ -11,6 +11,7 @@ class ColTaoBao{
      * @param $shopUrl
      */
     public static function collect($shopUrl) {
+        set_time_limit(0);
         Enterance::run(__DIR__);
         $collection = new TbCollection($shopUrl);
         return $collection->colMain();
