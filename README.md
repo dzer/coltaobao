@@ -1,10 +1,10 @@
-# coltaobao 淘宝店铺采集
+# ColTaobao 淘宝店铺采集
 
 ------
 
-colTaobao 是方便快速采集淘宝（天猫）店铺的所有商品，包括店铺信息、商品banner、所有商品信息、商品描述、商品图片等。
+ColTaobao 是方便快速采集淘宝（天猫）店铺的所有商品，包括店铺信息、商品banner、所有商品信息、商品描述、商品图片等。
 
-![coltaobao淘宝采集](https://pupapi.com/site/img/logo4_200x200.png)
+![ColTaobao](https://pupapi.com/site/img/logo4_200x200.png)
 
 - 批量采集
 - 符合psr-4
@@ -28,7 +28,7 @@ composer require dzer/coltaobao
 ```
 或者
 ```
-git clone https://github.com/Astonep/tp-admin
+git clone https://github.com/dzer/coltaobao.git
 ```
 ### 2. 配置
 
