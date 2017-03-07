@@ -9,29 +9,21 @@ CREATE TABLE `coltaobao_goods` (
   `categoryId` int(11) DEFAULT NULL COMMENT '分类ID',
   `price` decimal(10,2) DEFAULT NULL COMMENT '价格',
   `createTime` datetime DEFAULT NULL,
-  `modifyTime` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `modifyTime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `itemId` (`itemId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- ----------------------------
--- Table structure for coltaobao_goods_banner
--- ----------------------------
-DROP TABLE IF EXISTS `coltaobao_goods_banner`;
 CREATE TABLE `coltaobao_goods_banner` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `itemId` bigint(20) unsigned DEFAULT NULL COMMENT '商品ID',
   `picsPath` varchar(200) DEFAULT NULL COMMENT '远程原图url',
   `path` varchar(200) DEFAULT NULL COMMENT '本地图片地址',
   `createTime` datetime DEFAULT NULL,
-  `modifyTime` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `modifyTime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=156 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- ----------------------------
--- Table structure for coltaobao_goods_info
--- ----------------------------
-DROP TABLE IF EXISTS `coltaobao_goods_info`;
 CREATE TABLE `coltaobao_goods_info` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `itemId` bigint(20) unsigned DEFAULT NULL COMMENT '商品ID',
@@ -41,15 +33,11 @@ CREATE TABLE `coltaobao_goods_info` (
   `h5DescUrl` varchar(200) DEFAULT NULL COMMENT 'h5端商品描述Url',
   `fullDesc` text COMMENT '完整描述',
   `createTime` datetime DEFAULT NULL,
-  `modifyTime` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `modifyTime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `itemId` (`itemId`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- ----------------------------
--- Table structure for coltaobao_shop
--- ----------------------------
-DROP TABLE IF EXISTS `coltaobao_shop`;
 CREATE TABLE `coltaobao_shop` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `shopId` int(10) unsigned DEFAULT NULL COMMENT '商店id',
@@ -65,7 +53,7 @@ CREATE TABLE `coltaobao_shop` (
   `picUrl` varchar(100) DEFAULT NULL COMMENT '店铺logo',
   `starts` datetime DEFAULT NULL COMMENT '店铺创建时间',
   `createTime` datetime DEFAULT NULL,
-  `modifyTime` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  `modifyTime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `shopId` (`shopId`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
