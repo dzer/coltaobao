@@ -31,8 +31,9 @@ composer require dzer/coltaobao
 git clone https://github.com/dzer/coltaobao.git
 ```
 ### 2. 配置
+导入MySQL表 ```config/coltaobao.sql```
 
-配置文件config/config.php
+配置文件 ```config/config.php```
 ```
 return array(
     //时区
