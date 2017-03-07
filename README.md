@@ -1,31 +1,64 @@
-##淘宝（天猫）商品数据批量采集
+# coltaobao 淘宝店铺采集
 
-输入淘宝货天猫店铺地址，自动采集店铺下所有的商品，并保存到数据，同时采集商品所有图片到本地。
+------
 
-###一、引入入口文件
+colTaobao 是方便快速采集淘宝（天猫）店铺的所有商品，包括店铺信息、商品banner、所有商品信息、商品描述、商品图片等。
 
+![coltaobao淘宝采集](https://pupapi.com/site/img/logo4_200x200.png)
 
-	require './col.php';    
-    $tb = new TbCollection('https://hhtmy.tmall.com/');
-    $tb->colMain();	//调用方法自动采集保存
+- 批量采集
+- 符合psr-4
+- 数据保存到数据库
+- 图片保存到本地
+- 商品描述中图片自动替换成本地图片
+- 采集日志记录
 
-###二、入口文件可以配置日志，图片保存路径等
+### 依赖
 
+- PHP 5.3+
+- MYSQL 5.1+
+- MYSQLI PHP Extension
+- CURL PHP Extension
 
-    /**
-     * 淘宝采集 入口文件
-     *
-     * @version 1.0
-     * @author dzer <d20053140@gmail.com>
-     * @date 2015-11-04
-     */
-    //根目录
-    defined('TB_ROOT') || define('TB_ROOT', str_replace('\\', DIRECTORY_SEPARATOR, dirname(__FILE__)));
-    //是否处于开发模式(开发模式将记录接口请求参数，错误记录等)
-    defined('TB_DEBUG') || define('TB_DEBUG', true);
-    //资源保存目录
-    defined('TB_RESOURCE_PATH') || define('TB_RESOURCE_PATH', './Public/Uploads/Coltaobao');
+### 1. 安装
+
+```
+composer require dzer/coltaobao
+
+```
+或者
+```
+git clone https://github.com/Astonep/tp-admin
+```
+### 2. 配置
+
+配置文件config/config.php
+```
+return array(
+    //时区
+    'timeZone' => 'Asia/Shanghai',
+    //资源保存路劲
+    'resource' => './resource/coltaobao',
     //日志保存路径
-    defined('TB_LOG_DIR') || define('TB_LOG_DIR', TB_ROOT . '/tmp_log/');
-    //引入自动加载类
-    include(TB_ROOT . '/basic/TbAutoloader.php');
+    'log' => './tmp_log/coltaobao',
+    //数据库配置信息
+    'db' => array(
+        'host' => '127.0.0.1',
+        'username' => 'root',
+        'password' => 'root',
+        'db' => 'coltaobao',
+        'port' => 3306,
+        'prefix' => 'coltaobao_',
+        'charset' => 'utf8'
+    ),
+);
+```
+
+### 3. 运行
+```
+use dzer\coltaobao\ColTaoBao;
+
+ColTaoBao::collect('https://hhtmy.tmall.com/');//传入淘宝或天猫店URL地址
+```
+------
+
