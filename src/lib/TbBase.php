@@ -4,6 +4,7 @@ namespace dzer\coltaobao\lib;
 use dzer\coltaobao\basic\Config;
 use dzer\coltaobao\basic\Log;
 use dzer\coltaobao\basic\MysqliDb;
+use dzer\coltaobao\basic\WebSocketClient;
 
 /**
  * 基础类
@@ -14,8 +15,10 @@ use dzer\coltaobao\basic\MysqliDb;
  */
 class TbBase
 {
+    protected $uid;
     protected $log;
     protected $db;
+    protected $client;
 
     /**
      * 店铺地址
@@ -95,6 +98,35 @@ class TbBase
         return $path;
     }
 
+    /**
+     * 发送消息给服务端
+     *
+     * @param $send_msg
+     * @return mixed
+     */
+    public function pushNotification($send_msg)
+    {
+        if (empty($this->uid)) {
+            return false;
+        }
+        $data = [
+            'send_user_id' => $this->uid,
+            'send_msg' => $send_msg,
+            'send_type' => 'coltaobao'
+        ];
+        if ($this->client == null) {
+            $this->client = new WebSocketClient('127.0.0.1', 9501);
+        }
 
+        if (!$this->client->connect()) {
+            $this->log->error('websocket连接失败！');
+        }
+        if($this->client->send(json_encode($data))) {
+            $this->log->error('websocket消息发送成功！');
+        } else {
+            $this->log->error('websocket消息发送失败！');
+        }
+        return $this->client->close();
+    }
 
 }

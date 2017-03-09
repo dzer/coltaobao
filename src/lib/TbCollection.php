@@ -13,12 +13,14 @@ use Exception;
  */
 class TbCollection extends TbBase
 {
-
-    public function __construct($shopUrl = null)
+    public function __construct($shopUrl = null, $uid = null)
     {
         parent::__construct();
         if (!empty($shopUrl)) {
             $this->shopUrl = $shopUrl;
+        }
+        if (!empty($uid)) {
+            $this->uid = $uid;
         }
 
     }
@@ -29,14 +31,25 @@ class TbCollection extends TbBase
     public function colMain()
     {
         $start_time = $this->microTime();
-
-        //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息
-        $this->colGoodsList();
-        //第二步：通过商品id 循环采集单个商品详细信息
-        $this->colGoodsInfo();
-
+        $this->log->error('采集开始!');
+        try {
+            //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息
+            $this->colGoodsList();
+            //第二步：通过商品id 循环采集单个商品详细信息
+            $this->colGoodsInfo();
+        } catch (Exception $e) {
+            $this->log->error('采集失败!' . $e->getMessage());
+            $this->pushNotification(
+                array(
+                    'type' => 'rs',
+                    'data' => array(
+                        'msg' => '采集失败!'
+                    )
+                )
+            );
+        }
         $end_time = $this->microTime();
-        $this->log->info("店铺：" . $this->shopId . ',共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) ."秒\r\n");
+        $this->log->info("店铺：" . $this->shopId . ',共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) . "秒\r\n");
     }
 
     /**
@@ -52,6 +65,18 @@ class TbCollection extends TbBase
 
         //获取总页数
         $pageNum = $this->getGoodsPage();
+
+        if ($pageNum > 0) {
+            $this->pushNotification(
+                array(
+                    'type' => 'rs',
+                    'data' => array(
+                        'msg' => '开始采集！'
+                    )
+                )
+            );
+        }
+
         $urlList = $this->getGoodsPageUrl($pageNum);
         $content = implode('', $request->curlMulti($urlList));
         $this->goodsList = self::regExGoods($content);
@@ -75,7 +100,7 @@ class TbCollection extends TbBase
         $request = new Request();
         $content = $request->curl($url[0]);
         if (empty($content)) {
-            throw new Exception('获取页数失败！请重试！');
+            throw new Exception('采集失败！请检查url！');
         }
         //匹配总页数
         preg_match('/<b class="ui-page-s-len">(.+?)<\/b>/s', $content, $page);
@@ -121,6 +146,7 @@ class TbCollection extends TbBase
                             //保存店铺信息
                             $this->saveShop($goodsInfo->seller);
                         }
+                        $this->pushGoodsListMsg();
                         //保存商品信息
                         $this->saveGoods($goodsInfo);
                     } else {
@@ -131,6 +157,26 @@ class TbCollection extends TbBase
                 }
             }
         }
+    }
+
+    protected function pushGoodsListMsg()
+    {
+        $data = array();
+        foreach ($this->goodsList as $goods) {
+            $data[] = array(
+                'goodsId' => $goods['id'],
+                'goodsName' => $goods['name'],
+                'goodsBasic' => -1,
+                'goodsBanner' => -1,
+                'goodsDesc' => -1
+            );
+        }
+        $this->pushNotification(
+            array(
+                'type' => 'goodsList',
+                'data' => $data
+            )
+        );
     }
 
     /**
@@ -187,6 +233,17 @@ class TbCollection extends TbBase
 
         if ($id > 0) {
             $this->log->info($data->nick . " 店铺信息保存成功！");
+            $this->pushNotification(
+                array(
+                    'type' => 'shop',
+                    'data' => array(
+                        'img' => $data->img,
+                        'shopTitle' => $data->shopTitle,
+                        'creditLevel' => $data->creditLevel,
+                        'starts' => $data->starts
+                    )
+                )
+            );
             return true;
         } else {
             $this->log->warning(print_r($data, true) . "\r\n店铺保存失败！" . $this->db->getLastError());
@@ -216,11 +273,36 @@ class TbCollection extends TbBase
         $goodsId = $this->db->insert('goods', $param);
         if ($goodsId > 0) {
             $this->log->info("商品基本信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
+            $this->pushNotification(
+                array(
+                    'type' => 'goods',
+                    'data' => array(
+                        'goodsId' => $data->itemInfoModel->itemId,
+                        'goodsName' => $data->itemInfoModel->title,
+                        'goodsBasic' => 1,
+                        'goodsBanner' => -1,
+                        'goodsDesc' => -1
+                    )
+                )
+            );
+
             //采集banner图片地址并保存
             $this->saveGoodsBanner($data);
             //采集商品描述并保存
             $this->saveGoodsInfo($data);
         } else {
+            $this->pushNotification(
+                array(
+                    'type' => 'goods',
+                    'data' => array(
+                        'goodsId' => $data->itemInfoModel->itemId,
+                        'goodsName' => $data->itemInfoModel->title,
+                        'goodsBasic' => 0,
+                        'goodsBanner' => -1,
+                        'goodsDesc' => -1
+                    )
+                )
+            );
             $this->log->warning(print_r($param, true) . "\r\n商品保存失败！" . $this->db->getLastError());
             return false;
         }
@@ -251,6 +333,18 @@ class TbCollection extends TbBase
         $goodsId = $this->db->insert('goods_info', $param);
         if ($goodsId > 0) {
             $this->log->info("商品描述信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
+            $this->pushNotification(
+                array(
+                    'type' => 'goods',
+                    'data' => array(
+                        'goodsId' => $data->itemInfoModel->itemId,
+                        'goodsName' => $data->itemInfoModel->title,
+                        'goodsBasic' => 1,
+                        'goodsBanner' => 1,
+                        'goodsDesc' => 1
+                    )
+                )
+            );
             return true;
         } else {
             $this->log->warning(print_r($param, true) . "\r\n商品信息保存失败！");
@@ -334,6 +428,18 @@ class TbCollection extends TbBase
                 }
             }
         }
+        $this->pushNotification(
+            array(
+                'type' => 'goods',
+                'data' => array(
+                    'goodsId' => $data->itemInfoModel->itemId,
+                    'goodsName' => $data->itemInfoModel->title,
+                    'goodsBasic' => 1,
+                    'goodsBanner' => 1,
+                    'goodsDesc' => -1
+                )
+            )
+        );
         return true;
     }
 
