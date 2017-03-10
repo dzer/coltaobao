@@ -4,6 +4,8 @@
 
 ColTaobao 是方便快速采集淘宝（天猫）店铺的所有商品，包括店铺信息、商品banner、所有商品信息、商品描述、商品图片等。
 
+示例：[http://coltaobao.pupapi.com](http://coltaobao.pupapi.com "http://coltaobao.pupapi.com")
+
 ![ColTaobao](https://pupapi.com/site/img/logo4_200x200.png)
 
 - 批量采集
