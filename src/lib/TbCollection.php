@@ -61,15 +61,23 @@ class TbCollection extends TbBase
             );
         }
         $end_time = $this->microTime();
+
+        $path="/home/wwwroot/coltaobao_web/resource/coltaobao/{$this->shopId}/";
+        $img = $this->getDirectorySize($path);
         $this->pushNotification(
             array(
                 'type' => 'rs',
                 'data' => array(
-                    'msg' => '采集完成! 共采集商品：' . count($this->goodsList) . '条，用时：' . intval($end_time - $start_time - 4) . '秒'
+                    'msg' => '采集完成! 共采集商品：'
+                        . count($this->goodsList) . '条，'
+                        . "采集图片：{$img['count']}张，大小：" . $this->sizeFormat($img['size'])
+                        . '，用时：' . intval($end_time - $start_time - 4) . '秒'
                 )
             )
         );
+
         $this->log->info("店铺：" . $this->shopId . ',共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) . "秒\r\n");
+
     }
 
     /**
@@ -555,5 +563,64 @@ class TbCollection extends TbBase
     {
         list($u_sec, $sec) = explode(' ', microtime());
         return (floatval($u_sec) + floatval($sec));
+    }
+
+    function getDirectorySize($path)
+    {
+        $totalsize = 0;
+        $totalcount = 0;
+        $dircount = 0;
+        if ($handle = opendir ($path))
+        {
+            while (false !== ($file = readdir($handle)))
+            {
+                $nextpath = $path . '/' . $file;
+                if ($file != '.' && $file != '..' && !is_link ($nextpath))
+                {
+                    if (is_dir ($nextpath))
+                    {
+                        $dircount++;
+                        $result = $this->getDirectorySize($nextpath);
+                        $totalsize += $result['size'];
+                        $totalcount += $result['count'];
+                        $dircount += $result['dircount'];
+                    }
+                    elseif (is_file ($nextpath))
+                    {
+                        $totalsize += filesize ($nextpath);
+                        $totalcount++;
+                    }
+                }
+            }
+        }
+        closedir ($handle);
+        $total['size'] = $totalsize;
+        $total['count'] = $totalcount;
+        $total['dircount'] = $dircount;
+        return $total;
+    }
+
+    function sizeFormat($size)
+    {
+        if($size<1024)
+        {
+            return $size." bytes";
+        }
+        else if($size<(1024*1024))
+        {
+            $size=round($size/1024,1);
+            return $size." KB";
+        }
+        else if($size<(1024*1024*1024))
+        {
+            $size=round($size/(1024*1024),1);
+            return $size." MB";
+        }
+        else
+        {
+            $size=round($size/(1024*1024*1024),1);
+            return $size." GB";
+        }
+
     }
 }
