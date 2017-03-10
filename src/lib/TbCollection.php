@@ -145,8 +145,8 @@ class TbCollection extends TbBase
                         if ($k == 0) {
                             //保存店铺信息
                             $this->saveShop($goodsInfo->seller);
+                            $this->pushGoodsListMsg();
                         }
-                        $this->pushGoodsListMsg();
                         //保存商品信息
                         $this->saveGoods($goodsInfo);
                     } else {
