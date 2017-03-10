@@ -55,7 +55,7 @@ class TbCollection extends TbBase
             array(
                 'type' => 'rs',
                 'data' => array(
-                    'msg' => '采集完成! 共采集商品：' . count($this->goodsList) . '条，用时：' . intval($end_time - $start_time) - 4 . '秒'
+                    'msg' => '采集完成! 共采集商品：' . count($this->goodsList) . '条，用时：' . intval($end_time - $start_time - 4) . '秒'
                 )
             )
         );
