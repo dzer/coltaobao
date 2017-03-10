@@ -85,6 +85,16 @@ class TbCollection extends TbBase
                     )
                 )
             );
+        } else {
+            $this->pushNotification(
+                array(
+                    'type' => 'rs',
+                    'data' => array(
+                        'msg' => '采集失败!请检查url是否正确',
+                    )
+                )
+            );
+            exit();
         }
 
         $urlList = $this->getGoodsPageUrl($pageNum);
