@@ -15,11 +15,21 @@ class TbCollection extends TbBase
 {
     protected $goodsStatus = array();
 
+    /**
+     * @var int 店铺类型 1=天猫 2=淘宝
+     */
+    protected $shopType;
+
     public function __construct($shopUrl = null, $uid = null)
     {
         parent::__construct();
         if (!empty($shopUrl)) {
             $this->shopUrl = $shopUrl;
+            if (strpos($this->shopUrl, 'taobao.com') === false) {
+                $this->shopType = 1;
+            } else {
+                $this->shopType = 2;
+            }
         }
         if (!empty($uid)) {
             $this->uid = $uid;
@@ -123,11 +133,16 @@ class TbCollection extends TbBase
             throw new Exception('采集失败！请检查url！');
         }
         //匹配总页数
-        preg_match('/<b class="ui-page-s-len">(.+?)<\/b>/s', $content, $page);
+        if ($this->shopType == 1) {
+            preg_match('/<b class="ui-page-s-len">(.+?)<\/b>/s', $content, $page);
+        } else {
+            preg_match('/<span class="page-info">(.+?)<\/span>/s', $content, $page);
+        }
+
         if (isset($page[1])) {
             $page_num = explode('/', $page[1]);
         }
-        return isset($page_num[1]) ? $page_num[1] : false;
+        return isset($page_num[1]) ? intval($page_num[1]) : false;
     }
 
     /**
