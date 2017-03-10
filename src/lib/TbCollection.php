@@ -13,12 +13,21 @@ use Exception;
  */
 class TbCollection extends TbBase
 {
+    /**
+     * @var int 店铺类型 1=天猫 2=淘宝
+     */
+    protected $shopType;
 
     public function __construct($shopUrl = null)
     {
         parent::__construct();
         if (!empty($shopUrl)) {
             $this->shopUrl = $shopUrl;
+            if (strpos($this->shopUrl, 'tmall.com') !== false) {
+                $this->shopType = 1;
+            } else {
+                $this->shopType = 2;
+            }
         }
 
     }
@@ -78,7 +87,12 @@ class TbCollection extends TbBase
             throw new Exception('获取页数失败！请重试！');
         }
         //匹配总页数
-        preg_match('/<b class="ui-page-s-len">(.+?)<\/b>/s', $content, $page);
+        if ($this->shopType == 1) {
+            preg_match('/<b class="ui-page-s-len">(.+?)<\/b>/s', $content, $page);
+        } else {
+            preg_match('/<span class="page-info">(.+?)<\/span>/s', $content, $page);
+        }
+
         if (isset($page[1])) {
             $page_num = explode('/', $page[1]);
         }
