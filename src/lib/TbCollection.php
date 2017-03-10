@@ -183,7 +183,7 @@ class TbCollection extends TbBase
         $this->pushNotification(
             array(
                 'type' => 'goodsList',
-                'data' => $this->goodsStatus
+                'data' => array_values($this->goodsStatus)
             )
         );
     }
