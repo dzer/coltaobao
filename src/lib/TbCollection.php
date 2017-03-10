@@ -107,7 +107,7 @@ class TbCollection extends TbBase
             exit();
         }
 
-        $urlList = $this->getGoodsPageUrl($pageNum);
+        $urlList = $this->getGoodsPageUrl(1);
         $content = implode('', $request->curlMulti($urlList));
         $this->goodsList = self::regExGoods($content);
 
