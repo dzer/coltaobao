@@ -13,6 +13,8 @@ use Exception;
  */
 class TbCollection extends TbBase
 {
+    protected $goodsStatus = array();
+
     public function __construct($shopUrl = null, $uid = null)
     {
         parent::__construct();
@@ -161,9 +163,8 @@ class TbCollection extends TbBase
 
     protected function pushGoodsListMsg()
     {
-        $data = array();
         foreach ($this->goodsList as $goods) {
-            $data[] = array(
+            $this->goodsStatus[$goods['id']] = array(
                 'goodsId' => $goods['id'],
                 'goodsName' => $goods['name'],
                 'goodsBasic' => -1,
@@ -174,7 +175,7 @@ class TbCollection extends TbBase
         $this->pushNotification(
             array(
                 'type' => 'goodsList',
-                'data' => $data
+                'data' => $this->goodsStatus
             )
         );
     }
@@ -273,15 +274,16 @@ class TbCollection extends TbBase
         $goodsId = $this->db->insert('goods', $param);
         if ($goodsId > 0) {
             $this->log->info("商品基本信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
+            $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'] = 1;
             $this->pushNotification(
                 array(
                     'type' => 'goods',
                     'data' => array(
                         'goodsId' => $data->itemInfoModel->itemId,
                         'goodsName' => $data->itemInfoModel->title,
-                        'goodsBasic' => 1,
-                        'goodsBanner' => -1,
-                        'goodsDesc' => -1
+                        'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
+                        'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
                     )
                 )
             );
@@ -333,15 +335,16 @@ class TbCollection extends TbBase
         $goodsId = $this->db->insert('goods_info', $param);
         if ($goodsId > 0) {
             $this->log->info("商品描述信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
+            $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'] = 1;
             $this->pushNotification(
                 array(
                     'type' => 'goods',
                     'data' => array(
                         'goodsId' => $data->itemInfoModel->itemId,
                         'goodsName' => $data->itemInfoModel->title,
-                        'goodsBasic' => 1,
-                        'goodsBanner' => 1,
-                        'goodsDesc' => 1
+                        'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
+                        'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
                     )
                 )
             );
@@ -428,15 +431,16 @@ class TbCollection extends TbBase
                 }
             }
         }
+        $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'] = 1;
         $this->pushNotification(
             array(
                 'type' => 'goods',
                 'data' => array(
                     'goodsId' => $data->itemInfoModel->itemId,
                     'goodsName' => $data->itemInfoModel->title,
-                    'goodsBasic' => 1,
-                    'goodsBanner' => 1,
-                    'goodsDesc' => -1
+                    'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
+                    'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
+                    'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
                 )
             )
         );
