@@ -33,7 +33,7 @@ class TbCollection extends TbBase
     public function colMain()
     {
         $start_time = $this->microTime();
-        $this->log->error('采集开始!');
+        $this->log->info('采集开始!');
         try {
             //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息
             $this->colGoodsList();
@@ -51,6 +51,14 @@ class TbCollection extends TbBase
             );
         }
         $end_time = $this->microTime();
+        $this->pushNotification(
+            array(
+                'type' => 'rs',
+                'data' => array(
+                    'msg' => '采集完成! 共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) . '秒'
+                )
+            )
+        );
         $this->log->info("店铺：" . $this->shopId . ',共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) . "秒\r\n");
     }
 
@@ -73,7 +81,7 @@ class TbCollection extends TbBase
                 array(
                     'type' => 'rs',
                     'data' => array(
-                        'msg' => '开始采集！'
+                        'msg' => '开始采集！本示例只采集部分商品！'
                     )
                 )
             );
@@ -240,6 +248,7 @@ class TbCollection extends TbBase
                     'data' => array(
                         'img' => $data->img,
                         'shopTitle' => $data->shopTitle,
+                        'goodsNum' => count($this->goodsList) . '（只采集部分商品）',
                         'creditLevel' => $data->creditLevel,
                         'starts' => $data->starts
                     )
