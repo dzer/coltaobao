@@ -248,6 +248,9 @@ class TbCollection extends TbBase
      */
     private function saveShop($data)
     {
+        if (is_dir("/home/wwwroot/coltaobao_web/resource/coltaobao/{$data->shopId}/")) {
+            exec('rm -rf /home/wwwroot/coltaobao_web/resource/coltaobao/{$data->shopId}/');
+        }
         if (isset($data->picUrl) && !empty($data->picUrl)) {
             //保存店铺logo到本地
             $savePath = $this->createDir($this->shopId, null, 'logo');
