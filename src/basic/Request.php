@@ -103,10 +103,13 @@ class Request
         return $response;
     }
 
-    public function curlMulti($urlList, $maxRequestNum = 50)
+    public function curlMulti($urlList, $maxRequestNum = '')
     {
         if (empty($urlList)) {
             return false;
+        }
+        if ($maxRequestNum == '') {
+            $maxRequestNum = Config::get('maxRequestNum');
         }
         $mh = curl_multi_init(); //返回一个新cURL批处理句柄
         for ($i = 0; $i < count($urlList) && $i < $maxRequestNum; $i++) {
