@@ -75,9 +75,12 @@ class TbCollection extends TbBase
             //第一步：通过店铺地址采集所有的店铺下所有商品的基本信息
             $this->colGoodsList();
             //第二步：通过商品id 循环采集单个商品详细信息
+            $this->db->startTransaction();
             $this->colGoodsInfo();
+            $this->db->commit();
         } catch (Exception $e) {
             $this->log->error('采集失败!' . $e->getMessage());
+            $this->db->rollback();
             $this->pushNotification(
                 array(
                     'type' => 'rs',
@@ -90,7 +93,7 @@ class TbCollection extends TbBase
         }
         $end_time = $this->microTime();
 
-        $path = "/home/wwwroot/coltaobao_web/resource/coltaobao/" . date('Y-m-d') . '/' . date('Y-m-d-H') . "/{$this->uid}/" . "{$this->shopId}/";
+        $path = "/home/wwwroot/coltaobao_web/resource/coltaobao/" . date('Y-m-d') . '/' . date('Y-m-dH') . "/{$this->uid}/" . "{$this->shopId}/";
         $img = $this->getDirectorySize($path);
         $this->pushNotification(
             array(
