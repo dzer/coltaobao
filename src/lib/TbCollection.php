@@ -96,7 +96,7 @@ class TbCollection extends TbBase
                     'msg' => '采集完成! 共采集商品：'
                         . count($this->goodsList) . '条，'
                         . "采集图片：{$img['count']}张，大小：" . $this->sizeFormat($img['size'])
-                        . '，用时：' . intval($end_time - $start_time - 4) . '秒'
+                        . '，用时：' . max(1, intval($end_time - $start_time - 4)) . '秒'
                 )
             )
         );
@@ -235,7 +235,8 @@ class TbCollection extends TbBase
                 'goodsName' => $goods['name'],
                 'goodsBasic' => -1,
                 'goodsBanner' => -1,
-                'goodsDesc' => -1
+                'goodsDesc' => -1,
+                'goodsUrl' => ''
             );
         }
         $this->pushNotification(
@@ -350,7 +351,8 @@ class TbCollection extends TbBase
                         'goodsName' => $data->itemInfoModel->title,
                         'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
                         'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
-                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'],
+                        'goodsUrl' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsUrl']
                     )
                 )
             );
@@ -369,7 +371,8 @@ class TbCollection extends TbBase
                         'goodsName' => $data->itemInfoModel->title,
                         'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
                         'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
-                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'],
+                        'goodsUrl' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsUrl']
                     )
                 )
             );
@@ -404,6 +407,8 @@ class TbCollection extends TbBase
         if ($goodsId > 0) {
             $this->log->info("商品描述信息保存成功！商品ID：" . $data->itemInfoModel->itemId);
             $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'] = 1;
+            $this->goodsStatus[$data->itemInfoModel->itemId]['goodsUrl'] =
+                'http://coltaobao.pupapi.com/goods.php?goods_id=' . $data->itemInfoModel->itemId;
             $this->pushNotification(
                 array(
                     'type' => 'goods',
@@ -412,7 +417,8 @@ class TbCollection extends TbBase
                         'goodsName' => $data->itemInfoModel->title,
                         'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
                         'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
-                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'],
+                        'goodsUrl' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsUrl']
                     )
                 )
             );
@@ -427,7 +433,8 @@ class TbCollection extends TbBase
                         'goodsName' => $data->itemInfoModel->title,
                         'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
                         'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
-                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'],
+                        'goodsUrl' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsUrl']
                     )
                 )
             );
@@ -521,7 +528,8 @@ class TbCollection extends TbBase
                     'goodsName' => $data->itemInfoModel->title,
                     'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
                     'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
-                    'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
+                    'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'],
+                    'goodsUrl' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsUrl']
                 )
             )
         );
