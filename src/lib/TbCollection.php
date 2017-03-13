@@ -90,7 +90,7 @@ class TbCollection extends TbBase
         }
         $end_time = $this->microTime();
 
-        $path = "/home/wwwroot/coltaobao_web/resource/coltaobao/" . date('Y-m-d') . '/' . date('Y-m-d H') . "/{$this->uid}/" . "{$this->shopId}/";
+        $path = "/home/wwwroot/coltaobao_web/resource/coltaobao/" . date('Y-m-d') . '/' . date('Y-m-d-H') . "/{$this->uid}/" . "{$this->shopId}/";
         $img = $this->getDirectorySize($path);
         $this->pushNotification(
             array(
