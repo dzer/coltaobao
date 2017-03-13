@@ -45,17 +45,20 @@ class TbCollection extends TbBase
     {
         $deletePath = '/home/wwwroot/coltaobao_web/resource/coltaobao/' . date('Y-m-d', time() - 24 * 3600) . '/';
         if (is_dir($deletePath)) {
-            exec('rm -rf ' . $deletePath);
+            $rs = exec('rm -rf ' . $deletePath);
+            $this->log->info('删除目录：' . $deletePath . '-' . $rs);
         }
 
         $deletePath = '/home/wwwroot/coltaobao_web/resource/coltaobao/' . date('Y-m-d') . '/' . date('Y-m-d H', time() - 3600) . '/';
         if (is_dir($deletePath)) {
-            exec('rm -rf ' . $deletePath);
+            $rs = exec('rm -rf ' . $deletePath);
+            $this->log->info('删除目录：' . $deletePath . '-' . $rs);
         }
 
         $deletePath = '/home/wwwroot/coltaobao_web/resource/coltaobao/' . date('Y-m-d') . '/' . date('Y-m-d H') . "/{$this->uid}/";
         if (is_dir($deletePath)) {
-            exec('rm -rf ' . $deletePath);
+            $rs = exec('rm -rf ' . $deletePath);
+            $this->log->info('删除目录：' . $deletePath . '-' . $rs);
         }
     }
 
