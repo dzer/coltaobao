@@ -85,9 +85,9 @@ class TbBase
     public function createDir($shopId, $goodsId = null, $dirName = null)
     {
         if (!empty($goodsId)) {
-            $path = Config::get('resource') . '/' . date('Y-m-d') . '/' . date('Y-m-d H') . '/'  . "{$this->uid}/" . $shopId . '/' . $goodsId . '/';
+            $path = Config::get('resource') . '/' . date('Y-m-d') . '/' . date('Y-m-d-H') . '/'  . "{$this->uid}/" . $shopId . '/' . $goodsId . '/';
         } else {
-            $path = Config::get('resource') . '/' . date('Y-m-d') . '/' . date('Y-m-d H') . '/' . "{$this->uid}/" . $shopId . '/';
+            $path = Config::get('resource') . '/' . date('Y-m-d') . '/' . date('Y-m-d-H') . '/' . "{$this->uid}/" . $shopId . '/';
         }
         if (!empty($dirName)) {
             $path .= $dirName . '/';
