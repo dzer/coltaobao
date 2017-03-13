@@ -12,6 +12,8 @@ return array(
     'resource' => './resource/coltaobao',
     //日志保存路径
     'log' => './tmp_log/coltaobao',
+    //批量采集最大链接数
+    'maxRequestNum' => 50,
     //数据库配置信息
     'db' => array(
         'host' => '127.0.0.1',
