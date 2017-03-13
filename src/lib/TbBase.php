@@ -82,12 +82,12 @@ class TbBase
      * @param string $dirName 目录名称
      * @return string
      */
-    static function createDir($shopId, $goodsId = null, $dirName = null)
+    public function createDir($shopId, $goodsId = null, $dirName = null)
     {
         if (!empty($goodsId)) {
-            $path = Config::get('resource') . '/' . $shopId . '/' . $goodsId . '/';
+            $path = Config::get('resource') . '/' . date('Y-m-d') . '/' . date('Y-m-d H') . '/'  . "{$this->uid}/" . $shopId . '/' . $goodsId . '/';
         } else {
-            $path = Config::get('resource') . '/' . $shopId . '/';
+            $path = Config::get('resource') . '/' . date('Y-m-d') . '/' . date('Y-m-d H') . '/' . "{$this->uid}/" . $shopId . '/';
         }
         if (!empty($dirName)) {
             $path .= $dirName . '/';

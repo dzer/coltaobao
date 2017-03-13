@@ -103,7 +103,7 @@ class Request
         return $response;
     }
 
-    public function curlMulti($urlList, $maxRequestNum = 10)
+    public function curlMulti($urlList, $maxRequestNum = 30)
     {
         if (empty($urlList)) {
             return false;

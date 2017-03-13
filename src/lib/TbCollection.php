@@ -34,11 +34,35 @@ class TbCollection extends TbBase
         if (!empty($uid)) {
             $this->uid = $uid;
         }
+        $this->deletePath();
+    }
 
+    /**
+     * 删除过期资源目录
+     *
+     */
+    public function deletePath()
+    {
+        $deletePath = '/home/wwwroot/coltaobao_web/resource/coltaobao/' . date('Y-m-d', time() - 24 * 3600) . '/';
+        if (is_dir($deletePath)) {
+            exec('rm -rf ' . $deletePath);
+        }
+
+        $deletePath = '/home/wwwroot/coltaobao_web/resource/coltaobao/' . date('Y-m-d') . '/' . date('Y-m-d H', time() - 3600) . '/';
+        if (is_dir($deletePath)) {
+            exec('rm -rf ' . $deletePath);
+        }
+
+        $deletePath = '/home/wwwroot/coltaobao_web/resource/coltaobao/' . date('Y-m-d') . '/' . date('Y-m-d H') . "/{$this->uid}/";
+        if (is_dir($deletePath)) {
+            exec('rm -rf ' . $deletePath);
+        }
     }
 
     /**
      * 采集主要流程
+     *
+     * @return bool
      */
     public function colMain()
     {
@@ -59,10 +83,11 @@ class TbCollection extends TbBase
                     )
                 )
             );
+            return false;
         }
         $end_time = $this->microTime();
 
-        $path="/home/wwwroot/coltaobao_web/resource/coltaobao/{$this->shopId}/";
+        $path = "/home/wwwroot/coltaobao_web/resource/coltaobao/" . date('Y-m-d') . '/' . date('Y-m-d H') . "/{$this->uid}/" . "{$this->shopId}/";
         $img = $this->getDirectorySize($path);
         $this->pushNotification(
             array(
@@ -77,7 +102,7 @@ class TbCollection extends TbBase
         );
 
         $this->log->info("店铺：" . $this->shopId . ',共采集商品：' . count($this->goodsList) . '条，用时：' . ($end_time - $start_time) . "秒\r\n");
-
+        return true;
     }
 
     /**
@@ -248,9 +273,6 @@ class TbCollection extends TbBase
      */
     private function saveShop($data)
     {
-        if (is_dir("/home/wwwroot/coltaobao_web/resource/coltaobao/{$this->shopId}/")) {
-            exec("rm -rf /home/wwwroot/coltaobao_web/resource/coltaobao/{$this->shopId}/");
-        }
         if (isset($data->picUrl) && !empty($data->picUrl)) {
             //保存店铺logo到本地
             $savePath = $this->createDir($this->shopId, null, 'logo');
@@ -338,15 +360,16 @@ class TbCollection extends TbBase
             //采集商品描述并保存
             $this->saveGoodsInfo($data);
         } else {
+            $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'] = 0;
             $this->pushNotification(
                 array(
                     'type' => 'goods',
                     'data' => array(
                         'goodsId' => $data->itemInfoModel->itemId,
                         'goodsName' => $data->itemInfoModel->title,
-                        'goodsBasic' => 0,
-                        'goodsBanner' => -1,
-                        'goodsDesc' => -1
+                        'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
+                        'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
                     )
                 )
             );
@@ -395,6 +418,19 @@ class TbCollection extends TbBase
             );
             return true;
         } else {
+            $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc'] = 0;
+            $this->pushNotification(
+                array(
+                    'type' => 'goods',
+                    'data' => array(
+                        'goodsId' => $data->itemInfoModel->itemId,
+                        'goodsName' => $data->itemInfoModel->title,
+                        'goodsBasic' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBasic'],
+                        'goodsBanner' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsBanner'],
+                        'goodsDesc' => $this->goodsStatus[$data->itemInfoModel->itemId]['goodsDesc']
+                    )
+                )
+            );
             $this->log->warning(print_r($param, true) . "\r\n商品信息保存失败！");
             return false;
         }
@@ -573,30 +609,24 @@ class TbCollection extends TbBase
         $totalsize = 0;
         $totalcount = 0;
         $dircount = 0;
-        if ($handle = opendir ($path))
-        {
-            while (false !== ($file = readdir($handle)))
-            {
+        if ($handle = opendir($path)) {
+            while (false !== ($file = readdir($handle))) {
                 $nextpath = $path . '/' . $file;
-                if ($file != '.' && $file != '..' && !is_link ($nextpath))
-                {
-                    if (is_dir ($nextpath))
-                    {
+                if ($file != '.' && $file != '..' && !is_link($nextpath)) {
+                    if (is_dir($nextpath)) {
                         $dircount++;
                         $result = $this->getDirectorySize($nextpath);
                         $totalsize += $result['size'];
                         $totalcount += $result['count'];
                         $dircount += $result['dircount'];
-                    }
-                    elseif (is_file ($nextpath))
-                    {
-                        $totalsize += filesize ($nextpath);
+                    } elseif (is_file($nextpath)) {
+                        $totalsize += filesize($nextpath);
                         $totalcount++;
                     }
                 }
             }
         }
-        closedir ($handle);
+        closedir($handle);
         $total['size'] = $totalsize;
         $total['count'] = $totalcount;
         $total['dircount'] = $dircount;
@@ -605,24 +635,17 @@ class TbCollection extends TbBase
 
     function sizeFormat($size)
     {
-        if($size<1024)
-        {
-            return $size." bytes";
-        }
-        else if($size<(1024*1024))
-        {
-            $size=round($size/1024,1);
-            return $size." KB";
-        }
-        else if($size<(1024*1024*1024))
-        {
-            $size=round($size/(1024*1024),1);
-            return $size." MB";
-        }
-        else
-        {
-            $size=round($size/(1024*1024*1024),1);
-            return $size." GB";
+        if ($size < 1024) {
+            return $size . " bytes";
+        } else if ($size < (1024 * 1024)) {
+            $size = round($size / 1024, 1);
+            return $size . " KB";
+        } else if ($size < (1024 * 1024 * 1024)) {
+            $size = round($size / (1024 * 1024), 1);
+            return $size . " MB";
+        } else {
+            $size = round($size / (1024 * 1024 * 1024), 1);
+            return $size . " GB";
         }
 
     }
