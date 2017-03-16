@@ -364,8 +364,8 @@ class TbCollection extends TbBase
         if (!file_exists($path)) {
             mkdir($path, 0777, true);
         }
-        $pathInfo = pathinfo($img_url);
-        $extension = isset($pathInfo['extension']) ? $pathInfo['extension'] : 'jpg';
+        preg_match('/\.jpg|\.png|\.gif|\.bmp|\.jpeg/s', strtolower($img_url), $extension);
+        $extension = isset($extension[0]) ? $extension[0] : 'jpg';
         $name = time() . rand(000, 999) . '.' . $extension;
         $fopen = fopen($path . $name, "a");
         @fwrite($fopen, $result);
