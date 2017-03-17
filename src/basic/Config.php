@@ -1,11 +1,12 @@
 <?php
+
 namespace dzer\coltaobao\basic;
 
 /**
- * 配置文件类
+ * 配置文件类.
  *
- * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
+ *
  * @version 2.0
  */
 class Config
@@ -20,18 +21,19 @@ class Config
     private static $configPath;
 
     /**
-     * 加载配置文件
+     * 加载配置文件.
      *
      * @param string $configPath
+     *
      * @return array|mixed
      */
-    public static function load($configPath = "")
+    public static function load($configPath = '')
     {
         if (empty($configPath)) {
             $configPath = Enterance::$configPath;
         }
-        $files = Config::tree($configPath, "/.php$/");
-        $config = array();
+        $files = self::tree($configPath, '/.php$/');
+        $config = [];
         if (!empty($files)) {
             foreach ($files as $file) {
                 $config += include "{$file}";
@@ -39,16 +41,18 @@ class Config
         }
         self::$config = $config;
         self::$configPath = $configPath;
+
         return $config;
     }
 
     public static function loadFiles(array $files)
     {
-        $config = array();
+        $config = [];
         foreach ($files as $file) {
             $config += include "{$file}";
         }
         self::$config = $config;
+
         return $config;
     }
 
@@ -56,8 +60,9 @@ class Config
     {
         $result = isset(self::$config[$key]) ? self::$config[$key] : $default;
         if ($throw && is_null($result)) {
-            throw new \Exception("{key} config empty");
+            throw new \Exception('{key} config empty');
         }
+
         return $result;
     }
 
@@ -70,6 +75,7 @@ class Config
                 self::$config[$key] = $value;
             }
         }
+
         return true;
     }
 
@@ -77,8 +83,9 @@ class Config
     {
         $result = isset(self::$config[$key][$filed]) ? self::$config[$key][$filed] : $default;
         if ($throw && is_null($result)) {
-            throw new \Exception("{key} config empty");
+            throw new \Exception('{key} config empty');
         }
+
         return $result;
     }
 
@@ -87,7 +94,7 @@ class Config
         return self::$config;
     }
 
-    public static function tree($dir, $filter = '', &$result = array(), $deep = false)
+    public static function tree($dir, $filter = '', &$result = [], $deep = false)
     {
         $files = new \DirectoryIterator($dir);
         foreach ($files as $file) {
@@ -96,7 +103,7 @@ class Config
                 continue;
             }
             if ($file->isDir()) {
-                self::tree($dir . DIRECTORY_SEPARATOR . $filename, $filter, $result, $deep);
+                self::tree($dir.DIRECTORY_SEPARATOR.$filename, $filter, $result, $deep);
             } else {
                 if (!empty($filter) && !\preg_match($filter, $filename)) {
                     continue;
@@ -104,10 +111,11 @@ class Config
                 if ($deep) {
                     $result[$dir] = $filename;
                 } else {
-                    $result[] = $dir . DIRECTORY_SEPARATOR . $filename;
+                    $result[] = $dir.DIRECTORY_SEPARATOR.$filename;
                 }
             }
         }
+
         return $result;
     }
 }
