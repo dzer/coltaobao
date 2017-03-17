@@ -1,11 +1,12 @@
 <?php
+
 namespace dzer\coltaobao\basic;
 
 /**
- * 日志类
+ * 日志类.
  *
- * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
+ *
  * @version 2.0
  */
 class Log
@@ -15,11 +16,12 @@ class Log
     private $file = [];
     private $file_path;
 
-    public static function  getInstance()
+    public static function getInstance()
     {
         if (self::$instance == null) {
-            self::$instance = new Log(Config::get('log'));
+            self::$instance = new self(Config::get('log'));
         }
+
         return self::$instance;
     }
 
@@ -54,10 +56,10 @@ class Log
 
     protected function save($path, $content)
     {
-        $log_file = $this->file_path . '/' . $path . '_' . date("Y-m-d");
+        $log_file = $this->file_path.'/'.$path.'_'.date('Y-m-d');
 
         if (!isset($this->file[$path])) {
-            $last = $this->file_path . $path . '_' . date("Y-m-d", strtotime("-1 day"));
+            $last = $this->file_path.$path.'_'.date('Y-m-d', strtotime('-1 day'));
             if (isset($this->file[$last])) {
                 fclose($this->file[$last]);
                 unset($this->file[$last]);
@@ -65,10 +67,10 @@ class Log
             $this->file[$path] = fopen($log_file, 'a');
         }
         if (is_array($content)) {
-            $str = date('Y-m-d H:i:s') . ": " . var_export($content, true);
+            $str = date('Y-m-d H:i:s').': '.var_export($content, true);
         } else {
-            $str = date("Y-m-d H:i:s") . ": " . $content;
+            $str = date('Y-m-d H:i:s').': '.$content;
         }
-        fwrite($this->file[$path], $str . "\r\n");
+        fwrite($this->file[$path], $str."\r\n");
     }
 }
