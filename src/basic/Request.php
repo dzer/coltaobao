@@ -1,12 +1,10 @@
 <?php
-
 namespace dzer\coltaobao\basic;
-
 /**
- * 基础请求类.
+ * 基础请求类
  *
+ * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
- *
  * @version 2.0
  */
 class Request
@@ -24,13 +22,11 @@ class Request
     /**
      * @var array 回调方法
      */
-    public $callback = [];
+    public $callback = array();
 
     /**
-     * 获取网页内容.
-     *
+     * 获取网页内容
      * @param string $url 请求地址
-     *
      * @return string
      */
     public function get($url)
@@ -41,14 +37,11 @@ class Request
     /**
      * curl请求方法
      * 支持http和https请求
-     *
-     * @param string $url          请求地址
-     * @param array  $headerFields 请求头参数
-     * @param array  $postFields   请求体参数
-     *
-     * @throws \Exception
-     *
+     * @param string $url 请求地址
+     * @param array $headerFields 请求头参数
+     * @param array $postFields 请求体参数
      * @return mixed
+     * @throws \Exception
      */
     public function curl($url, $headerFields = null, $postFields = null)
     {
@@ -67,19 +60,19 @@ class Request
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout);
         }
         //https 请求(当请求https的数据时，会要求证书，这时候，加上下面这两个参数，规避ssl的证书检查)
-        if (strlen($url) > 5 && strtolower(substr($url, 0, 5)) == 'https') {
+        if (strlen($url) > 5 && strtolower(substr($url, 0, 5)) == "https") {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         }
         //抓取跳转后的页面
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
 
         if (is_array($postFields) && 0 < count($postFields)) {
-            $postBodyString = '';
+            $postBodyString = "";
             $postMultipart = false;
             foreach ($postFields as $k => $v) {
-                if ('@' != substr($v, 0, 1)) {//判断是不是文件上传
-                    $postBodyString .= "$k=".urlencode($v).'&';
+                if ("@" != substr($v, 0, 1)) {//判断是不是文件上传
+                    $postBodyString .= "$k=" . urlencode($v) . "&";
                 } else {
                     //文件上传用multipart/form-data，否则用www-form-urlencoded
                     $postMultipart = true;
@@ -91,7 +84,7 @@ class Request
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, $headerFields);
             } else {
-                $contentType = 'content-type: application/x-www-form-urlencoded; charset=UTF-8';
+                $contentType = "content-type: application/x-www-form-urlencoded; charset=UTF-8";
                 array_push($headerFields, $contentType);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, $headerFields);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, substr($postBodyString, 0, -1));
@@ -107,7 +100,6 @@ class Request
             }
         }
         curl_close($ch);
-
         return $response;
     }
 
@@ -131,16 +123,16 @@ class Request
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->readTimeout);
             $requestMap[$i] = $ch;
             curl_multi_add_handle($mh, $ch);  //向curl批处理会话中添加单独的curl句柄
         }
-        $rs = [];
+        $rs = array();
         do {
             //运行当前 cURL 句柄的子连接
-            while (($cme = curl_multi_exec($mh, $active)) == CURLM_CALL_MULTI_PERFORM);
+            while (($cme = curl_multi_exec($mh, $active)) == CURLM_CALL_MULTI_PERFORM) ;
             if ($cme != CURLM_OK) {
                 break;
             }
@@ -151,7 +143,7 @@ class Request
                 $error = curl_error($done['handle']);
 
                 if ($tmp_result === false) {
-                    Log::getInstance()->error('请求失败！'.$error."\r\n".var_export($info, true));
+                    Log::getInstance()->error("请求失败！" . $error . "\r\n"  . var_export($info, true));
                     continue;
                 }
                 if (!empty($this->callback)) {
@@ -167,8 +159,8 @@ class Request
                     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36');
                     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
                     curl_setopt($ch, CURLOPT_TIMEOUT, $this->readTimeout);
                     $requestMap[$i] = $ch;
                     curl_multi_add_handle($mh, $ch);
@@ -181,13 +173,13 @@ class Request
                 curl_multi_select($mh, 10);
             }*/
             //没有执行数据就会sleep，避免CPU过高
-            if ($active && curl_multi_select($mh) === -1) {
+            if($active && curl_multi_select($mh) === -1){
                 usleep(100);
             }
         } while ($active);
 
         curl_multi_close($mh);
-
         return $rs;
     }
+
 }

@@ -3,34 +3,34 @@
 namespace dzer\coltaobao\basic;
 
 /**
- * Class Formater.
+ * Class Formater
  *
+ * @package dzer\coltaobao\basic
  * @author dzer <d20053140@gmail.com>
- *
  * @version 2.0
  */
 class Formater
 {
-    public static function fatal($error, $trace = true)
+    public static function fatal($error, $trace=true)
     {
-        $exceptionHash = [
+        $exceptionHash = array(
             'className' => 'fatal',
-            'message'   => $error['message'],
-            'code'      => $error['code'],
-            'file'      => $error['file'],
-            'line'      => $error['line'],
+            'message' => $error['message'],
+            'code' => $error['code'],
+            'file' => $error['file'],
+            'line' =>$error['line'],
             'userAgent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '',
-            'trace'     => [],
-        ];
+            'trace' => array(),
+        );
         if ($trace) {
             $traceItems = debug_backtrace();
             foreach ($traceItems as $traceItem) {
-                $traceHash = [
-                    'file'     => isset($traceItem['file']) ? $traceItem['file'] : 'null',
-                    'line'     => isset($traceItem['line']) ? $traceItem['line'] : 'null',
+                $traceHash = array(
+                    'file' => isset($traceItem['file']) ? $traceItem['file'] : 'null',
+                    'line' => isset($traceItem['line']) ? $traceItem['line'] : 'null',
                     'function' => isset($traceItem['function']) ? $traceItem['function'] : 'null',
-                    'args'     => [],
-                ];
+                    'args' => array(),
+                );
                 if (!empty($traceItem['class'])) {
                     $traceHash['class'] = $traceItem['class'];
                 }
@@ -45,30 +45,28 @@ class Formater
                 $exceptionHash['trace'][] = $traceHash;
             }
         }
-
         return $exceptionHash;
     }
-
     public static function exception(\Exception $exception, $trace = true)
     {
-        $exceptionHash = [
+        $exceptionHash = array(
             'className' => 'Exception',
-            'message'   => $exception->getMessage(),
-            'code'      => $exception->getCode(),
-            'file'      => $exception->getFile(),
-            'line'      => $exception->getLine(),
+            'message' => $exception->getMessage(),
+            'code' => $exception->getCode(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
             'userAgent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '',
-            'trace'     => [],
-        ];
+            'trace' => array(),
+        );
         if ($trace) {
             $traceItems = $exception->getTrace();
             foreach ($traceItems as $traceItem) {
-                $traceHash = [
-                    'file'     => isset($traceItem['file']) ? $traceItem['file'] : 'null',
-                    'line'     => isset($traceItem['line']) ? $traceItem['line'] : 'null',
+                $traceHash = array(
+                    'file' => isset($traceItem['file']) ? $traceItem['file'] : 'null',
+                    'line' => isset($traceItem['line']) ? $traceItem['line'] : 'null',
                     'function' => isset($traceItem['function']) ? $traceItem['function'] : 'null',
-                    'args'     => [],
-                ];
+                    'args' => array(),
+                );
                 if (!empty($traceItem['class'])) {
                     $traceHash['class'] = $traceItem['class'];
                 }
@@ -83,7 +81,6 @@ class Formater
                 $exceptionHash['trace'][] = $traceHash;
             }
         }
-
         return $exceptionHash;
     }
 }
